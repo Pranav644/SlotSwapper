@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  events    Event[]
+  sentSwapRequests     SwapRequest[] @relation("sentSwapRequests")
+  receivedSwapRequests SwapRequest[] @relation("receivedSwapRequests")
+}
+
+model Event {
+  id        Int      @id @default(autoincrement())
+  title     String
+  startTime DateTime
+  endTime   DateTime
+  status    EventStatus @default(BUSY)
+  owner     User    @relation(fields: [ownerId], references: [id])
+  ownerId   Int
+
+  // For swap requests
+  sentSwapRequests     SwapRequest[] @relation("mySlot")
+  receivedSwapRequests SwapRequest[] @relation("theirSlot")
+}
+
+enum EventStatus {
+  BUSY
+  SWAPPABLE
+  SWAP_PENDING
+}
+
+model SwapRequest {
+  id           Int      @id @default(autoincrement())
+  mySlot       Event    @relation("mySlot", fields: [mySlotId], references: [id])
+  mySlotId     Int
+  theirSlot    Event    @relation("theirSlot", fields: [theirSlotId], references: [id])
+  theirSlotId  Int
+  requester    User     @relation("sentSwapRequests", fields: [requesterId], references: [id])
+  requesterId  Int
+  recipient    User     @relation("receivedSwapRequests", fields: [recipientId], references: [id])
+  recipientId  Int
+  status       SwapStatus @default(PENDING)
+  createdAt    DateTime  @default(now())
+}
+
+enum SwapStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
